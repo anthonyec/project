@@ -9,6 +9,18 @@ Command line tool to manage my projects
 
 `project make misc "Tax returns" -w` - Creates a project folder and a workspace folder, e.g `~/projects/misc/230129_tax_returns` and `~/workspace/misc/230129_tax_returns`
 
+```
+$ project find --type .blend
+
+---
+
+Projects found with ".blend" files
+
+misc:
+  My first blender project    ~/projects/misc/190103_my_first_blender_project
+  
+```
+
 ## project.yaml
 
 New projects will contain a `project.toml` file with project information.

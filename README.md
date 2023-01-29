@@ -21,7 +21,7 @@ misc:
   
 ```
 
-## project.yaml
+## project.toml
 
 New projects will contain a `project.toml` file with project information.
 

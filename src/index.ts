@@ -6,25 +6,33 @@ import { stdout } from 'process';
 import { doesFileExist, getDirectoryNames } from './fs';
 import { getProjectTomlFile } from './toml';
 import { stats } from './stats';
+import { textBlock } from './text';
 
 type Command = 'make' | 'stats';
 
+interface MakeOptions {
+  workspace: boolean;
+  noProjectFile: boolean;
+}
+
 function logUsage() {
   stdout.write('Usage: project <command> [options]');
+
   stdout.write('\n\n');
 
-  stdout.write('Options:');
-  stdout.write('\n');
-  stdout.write(
-    '  --workspace, -w       Create a workspace with the same name\n'
-  );
+  stdout.write(textBlock`
+    Options:
+      --workspace, -w                Create a workspace with the same name
+      --no-project-file, -n          Skip creating a project file
+  `);
+
   stdout.write('\n');
 
-  stdout.write('Commands:');
-  stdout.write('\n');
-  stdout.write('  make [options]        Make a new project\n');
-  stdout.write('  stats                 Show stats about all projects\n');
-  stdout.write('\n');
+  stdout.write(textBlock`
+    Commands:
+      make <org> <name> [options]    Make a new project
+      stats <org>                    Show stats about all projects
+  `);
 }
 
 function snakify(text: string) {
@@ -103,8 +111,16 @@ async function main() {
 
   switch (command) {
     case 'make': {
-      const organization = args[1];
-      const projectName = args[2];
+      const [_, organization, projectName, ...otherArguments] = args;
+
+      const options: MakeOptions = {
+        workspace:
+          otherArguments.includes('--workspace') ||
+          otherArguments.includes('-w'),
+        noProjectFile:
+          otherArguments.includes('--no-project-file') ||
+          otherArguments.includes('-n')
+      };
 
       const organizationDirectories = await getDirectoryNames(
         projectRootDirectory
@@ -164,19 +180,70 @@ async function main() {
         return;
       }
 
-      const projectFile = getProjectTomlFile({
-        name: projectName,
-        createdAt: new Date()
-      });
-
       await fs.mkdir(projectPath);
-      await fs.writeFile(
-        path.join(projectPath, 'project.toml'),
-        projectFile,
-        'utf8'
-      );
+
+      if (!options.noProjectFile) {
+        const projectFile = getProjectTomlFile({
+          name: projectName,
+          createdAt: new Date()
+        });
+
+        await fs.writeFile(
+          path.join(projectPath, 'project.toml'),
+          projectFile,
+          'utf8'
+        );
+      }
 
       stdout.write(`✅ Created project: ${projectPath}\n`);
+
+      if (!options.workspace) {
+        return;
+      }
+
+      const workspaceOrganizationDirectories = await getDirectoryNames(
+        workspaceRootDirectory
+      );
+      const workspaceOrganizationExists =
+        workspaceOrganizationDirectories.includes(organization);
+
+      if (!workspaceOrganizationExists) {
+        stdout.write(
+          `The workspace organization "${organization}" does not exist\n\n`
+        );
+        return;
+      }
+
+      const workspacePath = path.join(
+        workspaceRootDirectory,
+        organization,
+        projectDirectoryName
+      );
+      const workspaceAlreadyExists = await doesFileExist(workspacePath);
+
+      if (workspaceAlreadyExists) {
+        stdout.write(`The workspace "${projectName}" already exists:\n`);
+        stdout.write(`  ${workspacePath}\n\n`);
+        return;
+      }
+
+      await fs.mkdir(workspacePath);
+
+      stdout.write(`✅ Created workspace: ${workspacePath}\n`);
+
+      if (!options.noProjectFile) {
+        const projectFile = getProjectTomlFile({
+          name: projectName,
+          workspaceDirectory: workspacePath,
+          createdAt: new Date()
+        });
+
+        await fs.writeFile(
+          path.join(projectPath, 'project.toml'),
+          projectFile,
+          'utf8'
+        );
+      }
 
       break;
     }

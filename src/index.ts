@@ -269,8 +269,18 @@ async function main() {
     }
 
     case 'find': {
-      const query = args[1];
-      await find(rootProjectsDirectory, query);
+      const [_, query, ...otherArguments] = args;
+
+      const options = {
+        // TODO(anthony): This only works with one argument in a fixed order.
+        // Update so that it's dynamic and share functionality between commands.
+        type:
+          otherArguments[0] === '--type' || otherArguments[0] === '-t'
+            ? otherArguments[1]
+            : undefined
+      };
+
+      await find(rootProjectsDirectory, query, options);
       break;
     }
     default:

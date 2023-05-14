@@ -1,7 +1,7 @@
 import path from 'path';
 import { stdout } from 'process';
 
-import { getDirectoryNames } from './fs';
+import { getDirectoryNames, scanDirectory } from './fs';
 import { textBlock } from './text';
 
 interface Result {
@@ -9,6 +9,11 @@ interface Result {
   cleanName: string;
   organization: string;
   path: string;
+}
+
+interface QueryOptions {
+  /** Find extension type. */
+  type?: string;
 }
 
 function removeDatePrefix(name: string) {
@@ -20,7 +25,11 @@ function removeUnderscores(name: string) {
   return name.replaceAll('_', ' ').toLowerCase();
 }
 
-export async function find(rootProjectsDirectory: string, query: string) {
+export async function find(
+  rootProjectsDirectory: string,
+  query: string,
+  options?: QueryOptions
+) {
   if (query === undefined) {
     stdout.write(`Query is required\n\n`);
 
@@ -58,7 +67,29 @@ export async function find(rootProjectsDirectory: string, query: string) {
       const nameWithoutDatePrefix = removeDatePrefix(projectDirectoryName);
       const normalizedName = removeUnderscores(nameWithoutDatePrefix);
 
-      if (normalizedName.includes(normalizedQuery)) {
+      let fileTypeMatch = false;
+
+      if (options?.type && options.type !== undefined) {
+        // console.log(options.type)
+        const files = await scanDirectory(projectDirectoryPath);
+
+        fileTypeMatch = files.some(
+          (file) => path.extname(file.name) === options.type
+        );
+      }
+
+      const queryMatch = normalizedName.includes(normalizedQuery);
+
+      if (options?.type) {
+        if (queryMatch && fileTypeMatch) {
+          results.push({
+            name: projectDirectoryName,
+            cleanName: normalizedName,
+            organization: organizationDirectoryName,
+            path: projectDirectoryPath
+          });
+        }
+      } else if (queryMatch) {
         results.push({
           name: projectDirectoryName,
           cleanName: normalizedName,
@@ -69,7 +100,13 @@ export async function find(rootProjectsDirectory: string, query: string) {
     }
   }
 
-  stdout.write(`Found ${results.length} results for "${query}":\n\n`);
+  if (options?.type) {
+    stdout.write(
+      `Found ${results.length} results for "${query}" that included "${options.type}" files:\n\n`
+    );
+  } else {
+    stdout.write(`Found ${results.length} results for "${query}":\n\n`);
+  }
 
   const longestCleanNameLength = results.reduce((longest, result) => {
     return result.cleanName.length > longest

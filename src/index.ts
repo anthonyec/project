@@ -5,10 +5,15 @@ import { stdout } from 'process';
 
 import { doesFileExist, getDirectoryNames } from './fs';
 import { getProjectTomlFile } from './toml';
-import { stats } from './stats';
 import { textBlock } from './text';
+import { stats } from './stats';
+import { find } from './find';
 
-type Command = 'make' | 'stats';
+enum Command {
+  Make = 'make',
+  Stats = 'stats',
+  Find = 'find'
+}
 
 interface MakeOptions {
   workspace: boolean;
@@ -24,6 +29,7 @@ function logUsage() {
     Options:
       --workspace, -w                Create a workspace with the same name
       --no-project-file, -n          Skip creating a project file
+      --type, -t                     Specify the file types a project should have
   `);
 
   stdout.write('\n');
@@ -32,6 +38,7 @@ function logUsage() {
     Commands:
       make <org> <name> [options]    Make a new project
       stats <org>                    Show stats about all projects
+      find <query> [options]         Search for a project
   `);
 }
 
@@ -86,21 +93,21 @@ async function main() {
     return;
   }
 
-  const projectRootDirectory = process.env['PROJECT_ROOT_DIRECTORY'];
-  const workspaceRootDirectory = process.env['WORKSPACE_ROOT_DIRECTORY'];
-  const projectRootExists = await doesFileExist(projectRootDirectory);
-  const workspaceRootExists = await doesFileExist(projectRootDirectory);
+  const rootProjectsDirectory = process.env['PROJECT_ROOT_DIRECTORY'];
+  const rootWorkspaceDirectory = process.env['WORKSPACE_ROOT_DIRECTORY'];
+  const projectRootExists = await doesFileExist(rootProjectsDirectory);
+  const workspaceRootExists = await doesFileExist(rootProjectsDirectory);
 
   if (!projectRootExists) {
     stdout.write(
-      `The project root directory "${projectRootDirectory}" does not exist\n\n`
+      `The project root directory "${rootProjectsDirectory}" does not exist\n\n`
     );
     return;
   }
 
   if (!workspaceRootExists) {
     stdout.write(
-      `The workspace root directory "${workspaceRootDirectory}" does not exist\n\n`
+      `The workspace root directory "${rootWorkspaceDirectory}" does not exist\n\n`
     );
     return;
   }
@@ -123,7 +130,7 @@ async function main() {
       };
 
       const organizationDirectories = await getDirectoryNames(
-        projectRootDirectory
+        rootProjectsDirectory
       );
       const organizationExists = organizationDirectories.includes(organization);
 
@@ -136,7 +143,15 @@ async function main() {
       };
 
       if (!organization) {
-        stdout.write('Organization name is required\n\n');
+        stdout.write(textBlock`
+          Organization name is required
+
+          Example:
+            make cool_company_name "tax returns"
+        `);
+
+        stdout.write('\n');
+
         logAvailableOrganizations();
         return;
       }
@@ -159,7 +174,7 @@ async function main() {
 
       const projectDirectoryName = `${datePrefix}_${safeProjectName}`;
       const projectPath = path.join(
-        projectRootDirectory,
+        rootProjectsDirectory,
         organization,
         projectDirectoryName
       );
@@ -202,7 +217,7 @@ async function main() {
       }
 
       const workspaceOrganizationDirectories = await getDirectoryNames(
-        workspaceRootDirectory
+        rootWorkspaceDirectory
       );
       const workspaceOrganizationExists =
         workspaceOrganizationDirectories.includes(organization);
@@ -215,7 +230,7 @@ async function main() {
       }
 
       const workspacePath = path.join(
-        workspaceRootDirectory,
+        rootWorkspaceDirectory,
         organization,
         projectDirectoryName
       );
@@ -249,7 +264,13 @@ async function main() {
     }
     case 'stats': {
       const organization = args[1];
-      await stats(projectRootDirectory, organization);
+      await stats(rootProjectsDirectory, organization);
+      break;
+    }
+
+    case 'find': {
+      const query = args[1];
+      await find(rootProjectsDirectory, query);
       break;
     }
     default:

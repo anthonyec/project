@@ -5,8 +5,9 @@ import { stdout } from 'process';
 
 import { doesFileExist, getDirectoryNames } from './fs';
 import { getProjectTomlFile } from './toml';
+import { stats } from './stats';
 
-type Command = 'make';
+type Command = 'make' | 'stats';
 
 function logUsage() {
   stdout.write('Usage: project <command> [options]');
@@ -22,6 +23,7 @@ function logUsage() {
   stdout.write('Commands:');
   stdout.write('\n');
   stdout.write('  make [options]        Make a new project\n');
+  stdout.write('  stats                 Show stats about all projects\n');
   stdout.write('\n');
 }
 
@@ -100,7 +102,7 @@ async function main() {
   const command = args[0] as Command;
 
   switch (command) {
-    case 'make':
+    case 'make': {
       const organization = args[1];
       const projectName = args[2];
 
@@ -177,6 +179,12 @@ async function main() {
       stdout.write(`✅ Created project: ${projectPath}\n`);
 
       break;
+    }
+    case 'stats': {
+      const organization = args[1];
+      await stats(projectRootDirectory, organization);
+      break;
+    }
     default:
       logUsage();
   }

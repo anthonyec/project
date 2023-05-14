@@ -1,0 +1,25 @@
+{
+  "name": "@anthonyec/project",
+  "version": "0.0.1",
+  "description": "Command line tool to manage my projects",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "debug": "tsc --watch",
+    "format": "prettier --loglevel warn --write \"**/*.{md,ts}\""
+  },
+  "bin": {
+    "project": "dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.1.4",
+    "prettier": "^2.8.8",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@tsconfig/node18": "^2.0.1"
+  }
+}

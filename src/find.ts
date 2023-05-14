@@ -35,7 +35,9 @@ export async function find(
 
     stdout.write(textBlock`
       Example:
-        project find "tax"
+        project find "tax"                      # Find all projects with "tax" in the name
+        project find "space" --type ".blend"    # Find all projects with "space" in the name that have a .blend file
+        project find "" --type ".blend"         # Find all projects that have a .blend file
     `);
 
     return;

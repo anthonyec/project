@@ -37,8 +37,8 @@ function logUsage() {
   stdout.write(textBlock`
     Commands:
       make <org> <name> [options]    Make a new project
-      stats <org>                    Show stats about all projects
       find <query> [options]         Search for a project
+      stats <org>                    Show stats about all projects
   `);
 }
 
@@ -143,12 +143,17 @@ async function main() {
       };
 
       if (!organization) {
-        stdout.write(textBlock`
-          Organization name is required
+        const examplePath = path.join(
+          rootProjectsDirectory,
+          'my_cool_company',
+          `${getDatePrefix()}_tax_returns`
+        );
 
-          Example:
-            make cool_company_name "tax returns"
-        `);
+        stdout.write(`Organization name is required\n\n`);
+        stdout.write(`Example:\n`);
+        stdout.write(
+          `  make my_cool_company "tax returns"    # Creates a project at ${examplePath}\n`
+        );
 
         stdout.write('\n');
 
@@ -163,9 +168,17 @@ async function main() {
       }
 
       if (!projectName) {
+        const examplePath = path.join(
+          rootProjectsDirectory,
+          organization,
+          `${getDatePrefix()}_tax_returns`
+        );
+
         stdout.write(`Project name is required\n\n`);
         stdout.write(`Example:\n`);
-        stdout.write(`  make ${organization} "tax returns"\n`);
+        stdout.write(
+          `  make ${organization} "tax returns"    # Creates a project at ${examplePath}\n`
+        );
         return;
       }
 

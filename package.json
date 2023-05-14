@@ -7,7 +7,8 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "debug": "tsc --watch",
-    "format": "prettier --loglevel warn --write \"**/*.{md,ts}\""
+    "format": "prettier --loglevel warn --write \"**/*.{md,ts}\"",
+    "install-globally": "npm pack && npm install -g ./anthonyec-project-0.0.1.tgz && rm ./anthonyec-project-0.0.1.tgz"
   },
   "bin": {
     "project": "dist/index.js"

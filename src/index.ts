@@ -14,7 +14,7 @@ enum Command {
   Make = 'make',
   Find = 'find',
   Open = 'open',
-  Stats = 'stats',
+  Stats = 'stats'
 }
 
 interface MakeOptions {
@@ -23,25 +23,25 @@ interface MakeOptions {
 }
 
 function logUsage() {
-  stdout.write('Usage: project <command> [options]');
-
-  stdout.write('\n\n');
-
-  stdout.write(textBlock`
-    Options:
-      --workspace, -w                Create a workspace with the same name
-      --no-project-file, -n          Skip creating a project file
-      --type, -t                     Specify the file types a project should have
-  `);
+  stdout.write('Usage: project <command> [flags]\n');
 
   stdout.write('\n');
 
   stdout.write(textBlock`
     Commands:
-      make <org> <name> [options]    Make a new project
-      find <query> [options]         Search for a project
+      make <org> <name> [flags]    Make a new project
+      find <query> [flags]         Search for a project
       open <org> <query>             Opens an organization's directory or project match in Finder
       stats <org>                    Show stats about all projects
+  `);
+
+  stdout.write('\n');
+
+  stdout.write(textBlock`
+    Flags:
+      --workspace, -w                Create a workspace with the same name
+      --no-project-file, -n          Skip creating a project file
+      --type, -t                     Specify the file types a project should have
   `);
 }
 
@@ -309,14 +309,15 @@ async function main() {
           Example:
             project open my_cool_company        # Opens the organization's directory
             project open my_cool_company tax    # Opens the first matching project directory where the name includes "tax"
-        `)
+        `);
         return;
       }
 
       const organizationDirectoryNames = await getDirectoryNames(
         rootProjectsDirectory
       );
-      const organizationExists = organizationDirectoryNames.includes(organization);
+      const organizationExists =
+        organizationDirectoryNames.includes(organization);
 
       if (!organizationExists) {
         stdout.write(`The organization "${organization}" does not exist\n\n`);
@@ -325,7 +326,7 @@ async function main() {
 
       if (!query) {
         exec(`open ${path.join(rootProjectsDirectory, organization)}`);
-        return
+        return;
       }
 
       const organizationDirectoryPath = path.join(
@@ -347,7 +348,7 @@ async function main() {
       }
 
       exec(`open ${path.join(rootProjectsDirectory, organization, match)}`);
-      break
+      break;
     }
 
     default:

@@ -2,6 +2,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stdout } from 'process';
+import { exec } from 'child_process';
 
 import { doesFileExist, getDirectoryNames } from './fs';
 import { getProjectTomlFile } from './toml';
@@ -11,8 +12,9 @@ import { find } from './find';
 
 enum Command {
   Make = 'make',
+  Find = 'find',
+  Open = 'open',
   Stats = 'stats',
-  Find = 'find'
 }
 
 interface MakeOptions {
@@ -38,6 +40,7 @@ function logUsage() {
     Commands:
       make <org> <name> [options]    Make a new project
       find <query> [options]         Search for a project
+      open <org> <query>             Opens an organization's directory or project match in Finder
       stats <org>                    Show stats about all projects
   `);
 }
@@ -296,6 +299,57 @@ async function main() {
       await find(rootProjectsDirectory, query, options);
       break;
     }
+
+    case 'open': {
+      const [_, organization, query] = args;
+
+      if (!organization) {
+        stdout.write(`Organization name is required\n\n`);
+        stdout.write(textBlock`
+          Example:
+            project open my_cool_company        # Opens the organization's directory
+            project open my_cool_company tax    # Opens the first matching project directory where the name includes "tax"
+        `)
+        return;
+      }
+
+      const organizationDirectoryNames = await getDirectoryNames(
+        rootProjectsDirectory
+      );
+      const organizationExists = organizationDirectoryNames.includes(organization);
+
+      if (!organizationExists) {
+        stdout.write(`The organization "${organization}" does not exist\n\n`);
+        return;
+      }
+
+      if (!query) {
+        exec(`open ${path.join(rootProjectsDirectory, organization)}`);
+        return
+      }
+
+      const organizationDirectoryPath = path.join(
+        rootProjectsDirectory,
+        organization
+      );
+
+      const projectDirectoryNames = await getDirectoryNames(
+        organizationDirectoryPath
+      );
+
+      const match = projectDirectoryNames.find((projectDirectoryName) => {
+        return projectDirectoryName.toLowerCase().includes(query.toLowerCase());
+      });
+
+      if (!match) {
+        stdout.write(`No project found with a name matching "${query}"\n\n`);
+        return;
+      }
+
+      exec(`open ${path.join(rootProjectsDirectory, organization, match)}`);
+      break
+    }
+
     default:
       logUsage();
   }

@@ -2,7 +2,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stdout } from 'process';
+
 import { doesFileExist, getDirectoryNames } from './fs';
+import { getProjectTomlFile } from './toml';
 
 type Command = 'make';
 
@@ -138,16 +140,16 @@ async function main() {
       const datePrefix = getDatePrefix();
 
       const projectDirectoryName = `${datePrefix}_${safeProjectName}`;
-      const projectWorkspacePath = path.join(
+      const projectPath = path.join(
         projectRootDirectory,
         organization,
         projectDirectoryName
       );
-      const projectAlreadyExists = await doesFileExist(projectWorkspacePath);
+      const projectAlreadyExists = await doesFileExist(projectPath);
 
       if (projectAlreadyExists) {
         stdout.write(`The project "${projectName}" already exists:\n`);
-        stdout.write(`  ${projectWorkspacePath}\n\n`);
+        stdout.write(`  ${projectPath}\n\n`);
 
         stdout.write(
           `Choose a different name, different date or change the existing project\n\n`
@@ -160,8 +162,19 @@ async function main() {
         return;
       }
 
-      await fs.mkdir(projectWorkspacePath);
-      stdout.write(`✅ Created project: ${projectWorkspacePath}\n`);
+      const projectFile = getProjectTomlFile({
+        name: projectName,
+        createdAt: new Date()
+      });
+
+      await fs.mkdir(projectPath);
+      await fs.writeFile(
+        path.join(projectPath, 'project.toml'),
+        projectFile,
+        'utf8'
+      );
+
+      stdout.write(`✅ Created project: ${projectPath}\n`);
 
       break;
     default:
